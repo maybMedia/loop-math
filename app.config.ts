@@ -24,7 +24,7 @@ const config: ExpoConfig = {
   },
   web: {
     output: "static",
-    favicon: "./assets/images/favicon.png",
+    favicon: "./assets/icons/favicon.png",
   },
   plugins: [
     "expo-router",

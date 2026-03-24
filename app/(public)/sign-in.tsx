@@ -1,8 +1,9 @@
+import { AuthScreen } from "@/components/auth/AuthScreen";
 import { supabase } from "@/lib/supabase";
 import * as Linking from "expo-linking";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Button, H3, Input, Paragraph, YStack } from "tamagui";
+import { Button, Input, Paragraph, Separator, Text, YStack } from "tamagui";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -33,13 +34,12 @@ export default function SignInPage() {
     setLoading(true);
     setMessage("");
 
-    const redirectTo = Linking.createURL("/auth/callback");
+    const redirectTo = Linking.createURL("/home");
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo,
-        skipBrowserRedirect: false,
       },
     });
 
@@ -49,26 +49,23 @@ export default function SignInPage() {
       return;
     }
 
-    if (!data?.url) {
-      setMessage("Could not start Google sign-in.");
-      setLoading(false);
-      return;
-    }
-
     setLoading(false);
   };
 
   return (
-    <YStack flex={1} px="$5" py="$7" justifyContent="center">
-      <YStack gap="$4" maxWidth={420} width="100%" alignSelf="center">
-        <H3>Sign in</H3>
-
+    <AuthScreen
+      title="Welcome back"
+      subtitle="Sign in to continue your maths journey."
+    >
+      <YStack gap="$4">
         <Input
           placeholder="Email"
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
+          size="$5"
+          borderRadius="$8"
         />
 
         <Input
@@ -76,18 +73,47 @@ export default function SignInPage() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          size="$5"
+          borderRadius="$8"
         />
 
-        <Button onPress={handleSignIn} disabled={loading}>
+        <Button
+          onPress={handleSignIn}
+          disabled={loading}
+          size="$5"
+          borderRadius="$8"
+        >
           {loading ? "Signing in..." : "Sign in"}
         </Button>
 
-        <Button theme="blue" onPress={handleGoogleSignIn} disabled={loading}>
+        <Separator />
+
+        <Button
+          theme="blue"
+          variant="outlined"
+          onPress={handleGoogleSignIn}
+          disabled={loading}
+          size="$5"
+          borderRadius="$8"
+        >
           Continue with Google
         </Button>
 
-        {!!message && <Paragraph>{message}</Paragraph>}
+        {!!message && (
+          <Paragraph color="$red10" ta="center">
+            {message}
+          </Paragraph>
+        )}
+
+        <Paragraph ta="center" color="$gray10">
+          Don&apos;t have an account?{" "}
+          <Link href="/sign-up" asChild>
+            <Text color="$blue10" fontWeight="700">
+              Create one
+            </Text>
+          </Link>
+        </Paragraph>
       </YStack>
-    </YStack>
+    </AuthScreen>
   );
 }

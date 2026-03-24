@@ -1,8 +1,9 @@
+import { AuthScreen } from "@/components/auth/AuthScreen";
 import { supabase } from "@/lib/supabase";
 import * as Linking from "expo-linking";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Button, H3, Input, Paragraph, YStack } from "tamagui";
+import { Button, Input, Paragraph, Separator, Text, YStack } from "tamagui";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -14,33 +15,14 @@ export default function SignUpPage() {
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase.auth.signUp({
-      email,
+    const trimmedEmail = email.trim().toLowerCase();
+    const redirectTo = Linking.createURL("/home");
+
+    const { data, error } = await supabase.auth.signUp({
+      email: trimmedEmail,
       password,
-    });
-
-    if (error) {
-      setMessage(error.message);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
-    setMessage("Account created. Check your email if confirmation is enabled.");
-    router.replace("/home");
-  };
-
-  const handleGoogleSignUp = async () => {
-    setLoading(true);
-    setMessage("");
-
-    const redirectTo = Linking.createURL("/auth/callback");
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
       options: {
-        redirectTo,
-        skipBrowserRedirect: false,
+        emailRedirectTo: redirectTo,
       },
     });
 
@@ -50,8 +32,34 @@ export default function SignUpPage() {
       return;
     }
 
-    if (!data?.url) {
-      setMessage("Could not start Google sign-up.");
+    setLoading(false);
+
+    if (!data.session) {
+      router.replace({
+        pathname: "/check-email",
+        params: { email: trimmedEmail },
+      });
+      return;
+    }
+
+    router.replace("/home");
+  };
+
+  const handleGoogleSignUp = async () => {
+    setLoading(true);
+    setMessage("");
+
+    const redirectTo = Linking.createURL("/home");
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
       setLoading(false);
       return;
     }
@@ -60,16 +68,19 @@ export default function SignUpPage() {
   };
 
   return (
-    <YStack flex={1} px="$5" py="$7" justifyContent="center">
-      <YStack gap="$4" maxWidth={420} width="100%" alignSelf="center">
-        <H3>Create account</H3>
-
+    <AuthScreen
+      title="Create your account"
+      subtitle="Start building confidence with short, rewarding maths practice."
+    >
+      <YStack gap="$4">
         <Input
           placeholder="Email"
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
+          size="$5"
+          borderRadius="$8"
         />
 
         <Input
@@ -77,18 +88,47 @@ export default function SignUpPage() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          size="$5"
+          borderRadius="$8"
         />
 
-        <Button onPress={handleSignUp} disabled={loading}>
+        <Button
+          onPress={handleSignUp}
+          disabled={loading}
+          size="$5"
+          borderRadius="$8"
+        >
           {loading ? "Creating account..." : "Sign up"}
         </Button>
 
-        <Button theme="blue" onPress={handleGoogleSignUp} disabled={loading}>
+        <Separator />
+
+        <Button
+          theme="blue"
+          variant="outlined"
+          onPress={handleGoogleSignUp}
+          disabled={loading}
+          size="$5"
+          borderRadius="$8"
+        >
           Continue with Google
         </Button>
 
-        {!!message && <Paragraph>{message}</Paragraph>}
+        {!!message && (
+          <Paragraph color="$red10" ta="center">
+            {message}
+          </Paragraph>
+        )}
+
+        <Paragraph ta="center" color="$gray10">
+          Already have an account?{" "}
+          <Link href="/sign-in" asChild>
+            <Text color="$blue10" fontWeight="700">
+              Sign in
+            </Text>
+          </Link>
+        </Paragraph>
       </YStack>
-    </YStack>
+    </AuthScreen>
   );
 }
